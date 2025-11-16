@@ -1,8 +1,8 @@
 from torch import nn
 from ..utils import get_parameters
-from ..nn.activation import get_activation
 from ..nn.scalar import ScalarNet
-from ..utils import canonical_symplectic_matrix, symplectic_matrix_transformation_2d
+# TODO: import statement below was missing canonical_symplectic_transformation
+from ..utils import canonical_symplectic_transformation, symplectic_matrix_transformation_2d
 
 
 class Layer(nn.Module):

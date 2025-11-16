@@ -1,7 +1,7 @@
 
 from ..utils import get_parameters
 from .activation import get_activation, extract_last_digits
-from ..numeric import AVFRK2
+from ..numeric import AVFRK2 # TODO: not present?
 import torch
 import numpy as np
 import sympy as sp

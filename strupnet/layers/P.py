@@ -1,15 +1,18 @@
 import torch
 from torch import nn
+from ..nn.activation import get_activation
 from ..utils import get_parameters
 from ..utils import canonical_symplectic_transformation, symplectic_matrix_transformation_2d
 
 
 class Layer(nn.Module):
-    def __init__(self, dim, min_degree=None, max_degree=4, keepdim=False, **kwargs):
+    def __init__(self, dim, min_degree=None, max_degree=4, keepdim=False, activation=None, **kwargs):
         super().__init__()
         self.dim = dim
         self.max_degree = max_degree
         self.min_degree = min_degree or 2
+        if activation is not None: assert activation.lower() in ["tanh", "sigmoid"], "unsupported activation for P-SympNet"
+        self.act = get_activation(activation) if activation is not None else None
 
         self.params = nn.ParameterDict()
         self.params["a"] = get_parameters(self.max_degree - self.min_degree + 1)
@@ -18,17 +21,25 @@ class Layer(nn.Module):
 
     def forward(self, x, h, i=None, **kwargs):
         monomial = (x @ self.params["w"]).unsqueeze(-1)
-        polynomial_derivative = sum(
-            i * self.params["a"][i - self.min_degree] * torch.pow(monomial, i - 1)
-            for i in range(self.min_degree, self.max_degree + 1)
-        )
+        
+        polynomial = 0.0
+        polynomial_derivative = 0.0
+        # NOTE: shadowing issue with variable `i`, fixed by
+        # using deg for the loop variable
+        for deg in range(self.min_degree, self.max_degree+1):
+            coeff = self.params["a"][deg-self.min_degree]
+            polynomial += coeff * monomial**deg
+            polynomial_derivative += deg * coeff * monomial**(deg-1)
+
+        act_derivative = self.act.forward(polynomial, derivative=1) if self.act else 1.0
+
         if i is None:
             symp_weight = canonical_symplectic_transformation(self.params["w"])
         elif isinstance(i, int): # pick the i and i+1 components of w for the volume preserving symplectic flows. 
             symp_weight = symplectic_matrix_transformation_2d(self.params["w"], i)
         else:
             raise ValueError("i must be an integer or None")
-        x = x + h * polynomial_derivative * symp_weight
+        x = x + h * act_derivative * polynomial_derivative * symp_weight
         return x
 
     def hamiltonian(self, x):
@@ -39,4 +50,4 @@ class Layer(nn.Module):
             self.params["a"][i - self.min_degree] * monomial**i
             for i in range(self.min_degree, self.max_degree + 1)
         )
-        return polynomial
+        return self.act.forward(polynomial, derivative=0) if self.act else polynomial

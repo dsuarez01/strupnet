@@ -19,6 +19,8 @@ classifiers = [
 keywords = ["pytorch", "neural networks", "physics-informed machine learning", "structure-preserving neural networks"]
 dependencies = [
     "torch",
+    "sympy",
+    "numpy",
 ]
 requires-python = ">=3.9"
 

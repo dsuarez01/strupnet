@@ -109,6 +109,8 @@ class Polynomial(torch.nn.Module):
             degrees1 = torch.clamp(self.degrees - 1, min=0)
             degrees2 = torch.clamp(self.degrees - 2, min=0)
             y = self.degrees[None] * degrees1[None] * torch.pow(x[..., None], degrees2)
+        else:
+            raise ValueError("derivative must be 0, 1, or 2") # NOTE: missing case added here
         return torch.sum(self.params["c"][None, ...] * y, dim=-1)
 
     def numpy_forward(self, x, derivative=0):
@@ -124,6 +126,8 @@ class Polynomial(torch.nn.Module):
             degrees1 = np.clip(a=degrees - 1, a_min=0, a_max=None)
             degrees2 = np.clip(a=degrees - 2, a_min=0, a_max=None)
             y = degrees[None] * degrees1[None] * (x[..., None] ** degrees2)
+        else:
+            raise ValueError("derivative must be 0, 1, or 2") # NOTE: missing case added here
         return np.sum(coeffs[None, ...] * y, axis=-1)
 
     def init_params(self):
