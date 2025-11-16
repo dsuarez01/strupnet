@@ -1,5 +1,4 @@
-import torch
-from torch import nn
+import torch.nn as nn
 from ..nn.activation import get_activation
 from ..utils import get_parameters
 from ..utils import canonical_symplectic_transformation, symplectic_matrix_transformation_2d
@@ -12,7 +11,9 @@ class Layer(nn.Module):
         self.max_degree = max_degree
         self.min_degree = min_degree or 2
         if activation is not None: assert activation.lower() in ["tanh", "sigmoid"], "unsupported activation for P-SympNet"
-        self.act = get_activation(activation) if activation is not None else None
+        # NOTE: if activation passed in as None, this returns Tanh()
+        # changes default behavior to (hopefully) address training instability of P-SympNets
+        self.act = get_activation(activation)
 
         self.params = nn.ParameterDict()
         self.params["a"] = get_parameters(self.max_degree - self.min_degree + 1)
